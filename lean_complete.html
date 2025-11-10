@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StudyFocus Enhancer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Green & Blue effect styles only -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+        body {
+            margin: 0 !important;
+            padding: 0;
+            font-family: 'Orbitron', Arial, sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 40%, #17b86b, transparent 80%),
+                        radial-gradient(circle at 80% 70%, #1177d1, transparent 70%),
+                        linear-gradient(135deg, #105a95 15%, #21d090 55%, #1560ff 100%);
+            background-size: cover;
+            overflow-x: hidden;
+        }
+        .fireworks-canvas {
+            pointer-events: none;
+            position: fixed;
+            left: 0; top: 0; width: 100vw; height: 100vh; z-index: 1;
+        }
+        .main-container {
+            position: relative;
+            z-index: 10;
+            max-width: 1100px;
+            margin: 55px auto 0;
+            border-radius: 18px;
+            background: rgba(30,30,30,0.98);
+            padding: 36px 30px 32px;
+            box-shadow: 0 0 50px 14px #17d1ff68, 0 8px 40px #106faa7a;
+        }
+        nav { display: flex; justify-content: space-between; gap: 7px; margin-bottom: 24px; }
+        nav button { font-family: inherit; padding: 9px 23px; border-radius: 14px; border: none; margin-right: 2px; font-size: 1.15em; font-weight: 600; background: linear-gradient(90deg, #17b86b, #1560ff, #21d090); background-size: 180% 180%; color: #19222c; box-shadow: 0 0 16px #11b7e955; cursor: pointer; transition: filter 0.25s; }
+        nav button.active, nav button:hover { filter: brightness(1.3) drop-shadow(0 0 20px #fff);}
+        h1, h2, h3 { text-align: center; text-shadow: 0 1px 4px #17b86be5, 0 1px 28px #1560ff8a; margin-top: 6px;}
+        .page { display: none;}
+        .page.active { display: block;}
+        .card { background: rgba(47,44,50,0.95); border-radius: 15px; padding: 27px; box-shadow: 0 6px 24px #151831a0; margin: 15px auto 24px; max-width: 500px; position: relative;}
+        .input-group, .inline-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 13px;}
+        label { font-weight: 700; }
+        input, select, textarea { border-radius: 8px; font-size: 1em; padding: 8px 13px; border: none; outline: 2px solid #17b86bbc; transition: outline 0.2s;}
+        input:focus, select:focus, textarea:focus { outline: 2px solid #1560ffcd; }
+        .button { border-radius: 9px; background: linear-gradient(95deg,#21d090,#1560ff); color: #091520; font-weight: bold; padding: 10px 15px; border: none; cursor: pointer; margin-inline-end: 6px; box-shadow: 0 2px 8px #17b86b85; font-size: 1em;}
+        .button:hover { filter: contrast(1.1) brightness(1.3);}
+        #timer { font-size: 3em; font-weight: 700; margin: 0 0 24px; text-align: center; color: #1560ff; text-shadow: 0 0 18px #21d090ee;}
+        #chat-messages { background: #232144e6; border-radius: 10px; padding: 12px; min-height: 90px; max-height: 160px; overflow-y: auto; font-size: 1em; margin-bottom: 10px;}
+        .badge, .streak { display: inline-block; margin: 3px 7px 3px 0;background: linear-gradient(95deg,#21d090,#1560ff); color: #091520; font-weight: bold; border-radius: 9px; padding: 6px 17px; box-shadow: 0 0 14px #17b86b64;}
+        .disco-sparkle { position: absolute; width: 28px; height: 28px; border-radius: 50%; pointer-events: none; opacity: 0.55; animation: sparkle 3.5s infinite linear;}
+        @keyframes sparkle { 0% { transform: scale(0.8) rotate(0); opacity: 0.77;} 60%{opacity: 0.99;} 100% { transform: scale(1) rotate(720deg); opacity: 0.35;}
+        }
+        .next-button { position: absolute; bottom: 15px; right: 20px; background: linear-gradient(90deg, #17b86b, #21d090, #1560ff); color: #19222c; font-weight: 700; padding: 8px 16px; border-radius: 10px; cursor: pointer; box-shadow: 0 0 14px #17d1ffba; border: none; font-size: 1rem; transition: filter 0.3s;}
+        .next-button:hover { filter: brightness(1.3);}
+        .dashboard-greeting { color: #21d090; font-weight: bold; font-size: 1.19em; margin-bottom: 12px;}
+        .dashboard-metrics p { margin: 2px 0; font-size: 1em;}
+        .dashboard-tips { background: #213d3be3; margin: 12px 0; padding: 15px 18px 9px 18px; border-radius: 11px; font-size: 1.11em; color: #d6fcff; line-height: 1.7; box-shadow: 0 2px 10px #14afb21c;}
+        .done-btn {
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(95deg,#1560ff,#21d090);
+            color: #091520;
+            font-weight: bold;
+            margin-left: 10px;
+            padding: 7px 13px;
+            cursor: pointer;
+        }
+        .done-btn:hover { background: #26ffc3b5;}
+        .finished-list {
+            color: #dbfaff;
+            margin: 10px 0 0 0;
+            font-size: 1.08em;
+            line-height: 1.85;
+        }
+        /* App-style login card enhancements */
+        #register .card {
+            border-radius: 20px;
+            padding: 38px 30px 36px;
+            box-shadow: 0 0 80px #1560ff22;
+            background: linear-gradient(120deg, #141d2b 60%, #17b86b80 140%);
+            max-width: 425px;
+        }
+        #register .app-header-logo {
+            width: 60px; height: 60px;
+            display: block; margin: 0 auto 10px;
+            background: linear-gradient(120deg,#17b86b,#1560ff); border-radius: 20px;
+        }
+        #register h2 {
+            margin-top: 4px; letter-spacing: 0.02em;
+            font-size: 2em; color: #21d090; text-shadow: none;
+        }
+        #register .input-group label { margin-bottom: 2px; }
+        #register .input-group input[type="email"] { letter-spacing: 0.04em;}
+        #register .button {
+            width: 100%; margin: 12px 0 0 0; font-size: 1.1em;
+            background: linear-gradient(95deg,#21d090 40%, #1560ff 120%);
+        }
+        #register .logout-btn {
+            background: #105a95;
+            color: #21d090;
+            width: 100%; margin-top: 7px;
+        }
+        #userStatus {
+            margin: 7px 0 0 0; text-align: center; color: #21d090;
+        }
+        /* Dashboard extra features */
+        .dashboard-quote {
+            font-size: 1.13em;
+            font-style: italic;
+            color: #17b86b;
+            background: rgba(30,40,50,0.65);
+            margin: 12px 4px 16px 4px;
+            border-radius: 8px;
+            padding: 7px 18px;
+            text-align: center;
+        }
+        .dashboard-graph {
+            width: 98%; background: #213d3bfa;
+            border-radius: 14px; box-shadow: 0 1px 10px #1560ff33;
+            margin: 8px auto 18px auto; padding: 12px 0;
+            display: flex; align-items: flex-end; gap: 8px; height: 90px;
+        }
+        .dashboard-bar {
+            background: linear-gradient(135deg, #21d090 40%, #1560ff 110%);
+            border-radius: 7px; width: 46px;
+            transition: height 0.4s; margin-bottom: 2px;
+        }
+        .dashboard-actions {
+            display: flex; gap: 12px; justify-content: center; margin: 12px 0;
+        }
+        .dashboard-actions button {
+            background: linear-gradient(92deg,#17b86b,#21d090,#1560ff);
+            color: #19222c; font-weight: 700; border-radius: 10px;
+            padding: 7px 21px; cursor: pointer; border: none;
+            font-size: 1.13em; box-shadow: 0 0 14px #1560ff33;
+            transition: filter 0.21s;
+        }
+        .dashboard-actions button:hover { filter: brightness(1.22);}
+        .dashboard-score {
+            font-size: 1.18em; color: #1560ff; margin-top: 7px; font-weight:bold; text-align:center; text-shadow: 0 2px 13px #17b86bab;
+        }
+        #login-alert {
+            display: none;
+            color: #fff;
+            text-align: center;
+            background: #1560ffcc;
+            border-radius: 10px;
+            padding: 11px 12px 10px 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 18px #17b86b60;
+            margin-bottom: 22px;
+            position: fixed;
+            left: 50%;
+            top: 40px;
+            z-index: 1999;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+<div id="login-alert"></div>
+<canvas id="fireworks" class="fireworks-canvas"></canvas>
+<div class="main-container">
+    <h1>StudyFocus Enhancer 🚀</h1>
+    <nav>
+        <button data-page="register" class="active">User</button>
+        <button data-page="subjects">Subjects</button>
+        <button data-page="schedule">Schedule</button>
+        <button data-page="pomodoro">Pomodoro</button>
+        <button data-page="distractions">Distractions</button>
+        <button data-page="reminders">Reminders</button>
+        <button data-page="ai">AI Chat</button>
+        <button data-page="dashboard">Dashboard</button>
+    </nav>
+    <!-- 1: User login page: only email -->
+    <div class="page active" id="register">
+        <div class="card">
+            <div class="app-header-logo"></div>
+            <h2>Create Account</h2>
+            <form id="registerForm">
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" required name="email" autocomplete="off" placeholder="you@example.com">
+                </div>
+                <button class="button" type="submit">Sign Up</button>
+                <button class="button logout-btn" type="button" onclick="logoutAndReset()">Logout</button>
+            </form>
+            <button class="next-button" onclick="goToNextPage('register')">Next</button>
+            <div id="userStatus"></div>
+        </div>
+    </div>
+    <!-- Other modules unchanged... -->
+    <div class="page" id="subjects">
+        <div class="card">
+            <h2>Subjects & Topic Selection</h2>
+            <form id="subjectForm">
+                <div class="input-group">
+                    <label>Subject</label>
+                    <input type="text" name="subject" placeholder="Add new subject" required>
+                    <label>Topic</label>
+                    <input type="text" name="topic" placeholder="Add topic (optional)">
+                </div>
+                <button class="button" type="submit">Add</button>
+            </form>
+            <ul id="subjectsList"></ul>
+            <button class="next-button" onclick="goToNextPage('subjects')">Next</button>
+        </div>
+    </div>
+    <div class="page" id="schedule">
+        <div class="card">
+            <h2>Personalized Study Schedule</h2>
+            <form id="scheduleForm">
+                <div class="input-group">
+                    <label>Choose Subject</label>
+                    <select id="schedSubject" required></select>
+                    <label>Day & Time</label>
+                    <input type="datetime-local" name="schedTime" required>
+                </div>
+                <button class="button" type="submit">Add Slot</button>
+            </form>
+            <ul id="schedList"></ul>
+            <button class="next-button" onclick="goToNextPage('schedule')">Next</button>
+        </div>
+    </div>
+    <div class="page" id="pomodoro">
+        <div class="card">
+            <h2>Pomodoro Timer</h2>
+            <div id="timer">25:00</div>
+            <div>
+                <button class="button" onclick="startPomodoro()">Start</button>
+                <button class="button" onclick="pausePomodoro()">Pause</button>
+                <button class="button" onclick="resetPomodoro()">Reset</button>
+            </div>
+            <button class="next-button" onclick="goToNextPage('pomodoro')">Next</button>
+        </div>
+    </div>
+    <div class="page" id="distractions">
+        <div class="card">
+            <h2>Distractions Tracker</h2>
+            <div>
+                <p>Going out of this tab or switching apps will be counted as a distraction!</p>
+                <button class="button" onclick="resetDistractions()">Reset Distractions</button>
+            </div>
+            <h3>Today's Distractions: <span id="dCount">0</span></h3>
+            <button class="next-button" onclick="goToNextPage('distractions')">Next</button>
+        </div>
+    </div>
+    <div class="page" id="reminders">
+        <div class="card">
+            <h2>Daily Reminders & Notifications</h2>
+            <form id="reminderForm">
+                <div class="input-group">
+                    <label>Subject</label>
+                    <select id="remindSubject" required></select>
+                    <label>Reminder Time</label>
+                    <input type="time" name="remindTime" required>
+                </div>
+                <button class="button" type="submit">Set Reminder</button>
+            </form>
+            <ul id="remindersList"></ul>
+            <button class="next-button" onclick="goToNextPage('reminders')">Next</button>
+        </div>
+    </div>
+    <div class="page" id="ai">
+        <div class="card">
+            <h2>AI Chatbot & File/Image Upload</h2>
+            <div id="chat-messages"></div>
+            <form id="chatForm" autocomplete="off">
+                <div class="inline-group">
+                    <input type="text" id="userInput" placeholder="Ask anything..." required>
+                    <input type="file" id="fileInput" accept="image/*,.pdf,.txt">
+                    <button class="button" type="submit">Ask</button>
+                </div>
+            </form>
+            <button class="next-button" onclick="goToNextPage('ai')">Next</button>
+        </div>
+    </div>
+    <!-- Enhanced Dashboard -->
+    <div class="page" id="dashboard">
+        <div class="card">
+            <h2>Progress Dashboard</h2>
+            <div>
+                <div class="dashboard-greeting" id="dashboardGreet"></div>
+                <div class="dashboard-score" id="dashboardScore"></div>
+                <div class="dashboard-quote" id="dashboardQuote"></div>
+                <div class="dashboard-metrics">
+                    <p><b>Email Name:</b> <span id="dashUser"></span></p>
+                    <p><b>Total Distractions Today:</b> <span id="dashDistractions">0</span></p>
+                    <p><b>Total Subjects:</b> <span id="dashSubjects">0</span></p>
+                    <p><b>Tasks Done/Streak:</b> <span id="tasksComplete">0</span> / <span id="streak">0</span></p>
+                </div>
+                <div><b>Badges:</b>
+                    <span class="badge" id="badge-fast">🎉 Focus Pro</span>
+                    <span class="badge" id="badge-streak">🏆 Streak Master</span>
+                    <span class="badge" id="badge-distraction">🚫 Zero Distraction</span>
+                </div>
+                <div class="dashboard-graph" id="dashboardGraph"></div>
+                <div class="dashboard-actions">
+                    <button onclick="startPomodoro()">Start Pomodoro</button>
+                    <button onclick="resetDistractions()">Reset Distractions</button>
+                    <button onclick="goToNextPage('subjects')">Add Subject</button>
+                </div>
+                <div class="dashboard-tips">
+                    <b>Tips for Studying & Beating Distractions:</b><br>
+                    • Make short, realistic goals for each session.<br>
+                    • Use the Pomodoro method for better focus.<br>
+                    • Try to keep your phone and social apps away during study time.<br>
+                    • More distractions mean less learning—try "do not disturb" mode!<br>
+                    • Check your progress in this dashboard to reflect and improve.<br>
+                </div>
+                <div class="finished-list">
+                    <b>Finished Subjects:</b>
+                    <ul id="finishedSubjectsList"></ul>
+                </div>
+                <button class="button" onclick="logoutAndReset()">Logout</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="sparkle-zone"></div>
+<!-- Scripts Section -->
+<script>
+function isLoggedIn() {
+    let u = JSON.parse(localStorage.getItem('sfe_user') || '{}');
+    return u && u.email && u.email.trim().length > 0;
+}
+
+function showLoginAlert(msg) {
+    let alertBox = document.getElementById('login-alert');
+    alertBox.textContent = msg;
+    alertBox.style.display = 'block';
+    setTimeout(() => {
+        alertBox.style.display = 'none';
+    }, 1800);
+}
+
+// Navigation handlers - login required on all but register
+document.querySelectorAll('nav button').forEach(btn => {
+    btn.onclick = e => {
+        let page = btn.dataset.page;
+        if (page !== "register" && !isLoggedIn()) {
+            showLoginAlert("Login required. Please enter your email.");
+            document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+            document.querySelector('nav button[data-page="register"]').classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById("register").classList.add('active');
+            return;
+        }
+        document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById(btn.dataset.page).classList.add('active');
+        if(btn.dataset.page==="dashboard") renderDashboard();
+    }
+});
+const pageOrder = ['register','subjects','schedule','pomodoro','distractions','reminders','ai','dashboard'];
+function goToNextPage(currentId) {
+    const currentIndex = pageOrder.indexOf(currentId);
+    if(currentIndex>=0 && currentIndex < pageOrder.length - 1){
+        const nextPage = pageOrder[currentIndex+1];
+        if (nextPage !== "register" && !isLoggedIn()) {
+            showLoginAlert("Login required. Please enter your email.");
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+            document.querySelector('nav button[data-page="register"]').classList.add('active');
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('register').classList.add('active');
+            return;
+        }
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        const nextBtn = document.querySelector(`nav button[data-page="${nextPage}"]`);
+        if(nextBtn) nextBtn.classList.add('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const nextPageElem = document.getElementById(nextPage);
+        if(nextPageElem) nextPageElem.classList.add('active');
+        if(nextPage==="dashboard") renderDashboard();
+    }
+}
+function logoutAndReset() {
+    localStorage.clear();
+    location.reload();
+}
+const regForm = document.getElementById('registerForm');
+regForm.onsubmit = async e => {
+    e.preventDefault();
+    const fd = new FormData(regForm);
+    const email = fd.get('email');
+
+    // Save user locally
+    localStorage.setItem('sfe_user', JSON.stringify({ email: email }));
+    document.getElementById('userStatus').textContent = 'Logged in!';
+    loadUserData();
+
+    // ✅ Send Welcome Email
+    try {
+        const res = await fetch("http://localhost:5000/send-welcome", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (data.success) alert("✅ Welcome email sent successfully!");
+        else alert("❌ Email failed: " + data.error);
+    } catch (err) {
+        alert("⚠️ Could not connect to email server");
+    }
+
+    regForm.reset();
+};
+
+function extractEmailName(email) {
+    if (!email) return '';
+    let name = email.split('@')[0].replace(/[\.\_]/g,''); // Remove dots/underscores
+    return name;
+}
+function loadUserData(){
+    let u = JSON.parse(localStorage.getItem('sfe_user')||'{}');
+    let name = extractEmailName(u.email);
+    document.getElementById('dashUser').textContent = name || '';
+}
+loadUserData();
+
+let subjects = JSON.parse(localStorage.getItem('sfe_subjects') || '[]');
+let finishedSubjects = JSON.parse(localStorage.getItem('sfe_subjects_finished') || '[]');
+function renderSubjects(){
+    let ul = document.getElementById('subjectsList');
+    ul.innerHTML = '';
+    subjects.forEach((s, idx)=>{
+        let L = document.createElement('li');
+        L.textContent = `${s.subject} (${s.topic})`;
+        let btn = document.createElement('button');
+        btn.textContent = 'Mark as Done';
+        btn.className = 'done-btn';
+        btn.onclick = function() {
+            let finishedOne = subjects.splice(idx, 1)[0];
+            if (finishedOne) {
+                finishedSubjects.push(finishedOne);
+                localStorage.setItem('sfe_subjects_finished', JSON.stringify(finishedSubjects));
+            }
+            localStorage.setItem('sfe_subjects', JSON.stringify(subjects));
+            renderSubjects();
+        };
+        L.appendChild(btn);
+        ul.appendChild(L);
+    });
+    let sSel = document.getElementById('schedSubject');
+    let rSel = document.getElementById('remindSubject');
+    sSel.innerHTML = rSel.innerHTML = '';
+    subjects.forEach(s=>{
+        sSel.innerHTML += `<option>${s.subject}</option>`;
+        rSel.innerHTML += `<option>${s.subject}</option>`;
+    });
+}
+document.getElementById('subjectForm').onsubmit = e => {
+    e.preventDefault();
+    let fd = new FormData(e.target);
+    let v = {subject: fd.get('subject'), topic: fd.get('topic')};
+    if (v.subject) subjects.push(v);
+    localStorage.setItem('sfe_subjects', JSON.stringify(subjects));
+    e.target.reset(); renderSubjects();
+}
+renderSubjects();
+
+let scheds = JSON.parse(localStorage.getItem('sfe_sched') || '[]');
+function renderSched() {
+    let ul = document.getElementById('schedList');
+    ul.innerHTML = '';
+    scheds.forEach(s => {
+        let subjText = s.subject ? s.subject : '';
+        let dtText = '';
+        if(s.time){
+            let dt = new Date(s.time);
+            dtText = dt.toLocaleString();
+        }
+        let L=document.createElement('li');
+        L.textContent = `${subjText} - ${dtText}`;
+        ul.appendChild(L);
+    });
+}
+document.getElementById('scheduleForm').onsubmit = e => {
+    e.preventDefault();
+    let fd = new FormData(e.target);
+    let v = {subject: fd.get('schedSubject'), time: fd.get('schedTime')};
+    scheds.push(v);
+    localStorage.setItem('sfe_sched', JSON.stringify(scheds));
+    e.target.reset();
+    renderSched();
+}
+renderSched();
+
+let reminders = JSON.parse(localStorage.getItem('sfe_reminders')||'[]');
+document.getElementById('reminderForm').onsubmit = e => {
+    e.preventDefault();
+    let fd = new FormData(e.target);
+    let v = {subject: fd.get('remindSubject'), time: fd.get('remindTime')};
+    reminders.push(v); localStorage.setItem('sfe_reminders', JSON.stringify(reminders));
+    e.target.reset(); renderReminders();
+}
+function renderReminders() {
+    let ul = document.getElementById('remindersList');
+    ul.innerHTML = '';
+    reminders.forEach(r=>{
+        let subjText = r.subject ? r.subject : '';
+        let L = document.createElement('li');
+        L.textContent = `Read ${subjText} at ${r.time}`;
+        ul.appendChild(L);
+    });
+}
+renderReminders();
+setInterval(()=>{
+    let now = new Date(), t = now.toTimeString().substring(0,5);
+    reminders.forEach(r=>{
+        if(r.time===t){alert('Reminder: Read '+(r.subject?r.subject:''));}
+    });
+},60000);
+let timerRef = null, pomodoroTime = 25*60, timerLeft = pomodoroTime, isRunning=false;
+function updateTimer(){
+    let m = Math.floor(timerLeft/60), s=timerLeft%60;
+    document.getElementById('timer').textContent = `${m.toString().padStart(2,0)}:${s.toString().padStart(2,0)}`;
+}
+function startPomodoro(){
+    if (!isRunning) {
+        isRunning=true;
+        timerRef=setInterval(()=>{
+            if(timerLeft>0){timerLeft--; updateTimer();}
+            else{clearInterval(timerRef); isRunning=false; timerLeft=pomodoroTime; alert('Pomodoro complete!'); updateProgress(1);}
+        },1000);
+    }
+}
+function pausePomodoro(){ isRunning=false; clearInterval(timerRef);}
+function resetPomodoro(){ timerLeft=pomodoroTime; updateTimer(); clearInterval(timerRef); isRunning=false;}
+updateTimer();
+let distractions = Number(localStorage.getItem('sfe_distractions')||'0');
+function renderDistractions(){document.getElementById('dCount').textContent = distractions;}
+function resetDistractions(){distractions=0; localStorage.setItem('sfe_distractions', '0'); renderDistractions();}
+renderDistractions();
+window.addEventListener('blur', ()=>{distractions++; localStorage.setItem('sfe_distractions', distractions); renderDistractions(); updateBadgeDistraction(); });
+const chatForm = document.getElementById('chatForm');
+const chatMsg = document.getElementById('chat-messages');
+chatForm.onsubmit = async e => {
+    e.preventDefault();
+    const query = document.getElementById('userInput').value;
+    const file = document.getElementById('fileInput').files[0];
+    appendChatMsg('You', query, file);
+    document.getElementById('userInput').value = '';
+    if(file){
+        const fr = new FileReader();
+        fr.onload = function(e){
+            appendChatMsg('AI', 'Received your file "'+file.name+'". (AI processing not implemented in this demo)');
+        }
+        fr.readAsDataURL(file);
+    }else{
+        setTimeout(()=>{appendChatMsg('AI', `AI says: "${query.split('').reverse().join('')}" (reversed for demo)`);}, 900);
+    }
+}
+function appendChatMsg(from, msg, file) {
+    let d = document.createElement('div');
+    d.innerHTML = `<b>${from}:</b> ${msg}`;
+    chatMsg.appendChild(d);
+    chatMsg.scrollTop = chatMsg.scrollHeight;
+}
+let tasksDone = Number(localStorage.getItem('sfe_tasks')||'0');
+let streak = Number(localStorage.getItem('sfe_streak')||'0');
+function updateProgress(add) {
+    tasksDone+=add;
+    if(tasksDone>0) streak++;
+    localStorage.setItem('sfe_tasks', tasksDone);
+    localStorage.setItem('sfe_streak', streak);
+    document.getElementById('tasksComplete').textContent = tasksDone;
+    document.getElementById('streak').textContent = streak;
+    updateBadgeStreak();
+}
+document.getElementById('tasksComplete').textContent = tasksDone;
+document.getElementById('streak').textContent = streak;
+function updateBadgeDistraction(){
+    document.getElementById('badge-distraction').style.opacity = distractions>0?0.4:1;
+}
+function updateBadgeStreak(){
+    document.getElementById('badge-streak').style.opacity = streak>2?1:0.3;
+}
+updateBadgeDistraction(); updateBadgeStreak();
+
+// ------------ Dashboard Finished Subjects and Enhanced Features ------------
+function renderDashboard() {
+    let user = JSON.parse(localStorage.getItem('sfe_user')||'{}');
+    let name = extractEmailName(user.email);
+    document.getElementById('dashboardGreet').textContent = name ? `Hi, ${name}! Welcome to Your Focus Dashboard ✨` : '';
+    let quotes = [
+        "Great things never come from comfort zones.",
+        "Push yourself, because no one else is going to do it for you.",
+        "Success doesn’t just find you – you have to go out and get it.",
+        "Don’t stop when you’re tired. Stop when you’re done.",
+        "The secret to getting ahead is getting started.",
+        "Discipline is the bridge between goals and accomplishment."
+    ];
+    let qTxt = quotes[Math.floor(Math.random()*quotes.length)];
+    document.getElementById('dashboardQuote').textContent = `"${qTxt}"`;
+    let score = Math.max(30, Math.min(100, 80 + streak*2 - distractions*3));
+    document.getElementById('dashboardScore').textContent = `Productivity Score: ${score}`;
+    document.getElementById('dashUser').textContent = name;
+    document.getElementById('dashDistractions').textContent = Number(localStorage.getItem('sfe_distractions')||'0');
+    let subjectsArr = JSON.parse(localStorage.getItem('sfe_subjects') || '[]');
+    document.getElementById('dashSubjects').textContent = subjectsArr.length;
+    document.getElementById('tasksComplete').textContent = tasksDone;
+    document.getElementById('streak').textContent = streak;
+    let graphEl = document.getElementById('dashboardGraph');
+    let progressMock = [tasksDone, streak, Math.max(2,subjectsArr.length), 2+distractions, streak, Math.max(4,subjectsArr.length), distractions];
+    graphEl.innerHTML = '';
+    progressMock.forEach((v,i)=>{
+        let bar = document.createElement('div');
+        bar.className = 'dashboard-bar';
+        bar.style.height = (v*11+15)+'px';
+        bar.title = `Day ${i+1}: ${v}`;
+        graphEl.appendChild(bar);
+    });
+    let finList = document.getElementById('finishedSubjectsList');
+    finList.innerHTML = '';
+    let finArr = JSON.parse(localStorage.getItem('sfe_subjects_finished') || '[]');
+    if (finArr.length === 0) {
+        finList.innerHTML = '<li>None yet</li>';
+    } else {
+        finArr.forEach((s) => {
+            let L = document.createElement('li');
+            L.textContent = s.subject+(s.topic ? ` (${s.topic})` : '');
+            finList.appendChild(L);
+        });
+    }
+    updateBadgeDistraction();
+    updateBadgeStreak();
+}
+
+// Sparkle background
+let sparkleZone = document.getElementById('sparkle-zone');
+for(let i=0; i<38; i++){
+    let sp = document.createElement('div');
+    sp.className = 'disco-sparkle';
+    sp.style.background = `radial-gradient(#17b86b,#1560ff,#21d090,#17b86b,#1560ff 75%)`;
+    sp.style.left = `${Math.random()*100}vw`;
+    sp.style.top = `${Math.random()*100}vh`;
+    sp.style.animationDuration = `${2.5+Math.random()*2.5}s`;
+    sparkleZone.appendChild(sp);
+}
+
+// ---- ENHANCED FIREWORKS IN BACKGROUND ----
+(() => {
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    let W = window.innerWidth, H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    let fireworks = [], particles = [];
+    class Firework {
+        constructor(x,y,targetY){
+            this.x=x;this.y=H;
+            this.targetY=targetY;this.speed=-9-(Math.random()*4);
+            this.mark=false;
+            this.color=`hsl(${210+Math.random()*60},80%,55%)`;
+        }
+        update(){
+            this.y+=this.speed;
+            if(this.y<=this.targetY){
+                this.mark=true; createParticles(this.x,this.y,this.color);
+            }
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,4,0,2*Math.PI);
+            ctx.fillStyle=this.color;
+            ctx.fill();
+        }
+    }
+    class Particle{
+        constructor(x,y,color){
+            this.x=x;this.y=y;this.color=color;
+            this.life=38+Math.random()*30;
+            this.angle=Math.random()*2*Math.PI;
+            this.speed=3+Math.random()*4;
+        }
+        update(){
+            this.x+=Math.cos(this.angle)*this.speed;
+            this.y+=Math.sin(this.angle)*this.speed+0.8;
+            this.speed*=0.97; this.life--;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.arc(this.x,this.y,3,0,2*Math.PI);
+            ctx.fillStyle=this.color;
+            ctx.fill();
+        }
+    }
+    function createParticles(x,y,color){
+        for(let i=0; i<16+Math.random()*10; i++){
+            particles.push(new Particle(x,y,color));
+        }
+    }
+    function loop(){
+        ctx.clearRect(0,0,W,H);
+        if(Math.random()<0.18){
+            fireworks.push(new Firework(
+                Math.random()*W,
+                H,
+                Math.random()*H*0.6 + H*0.2
+            ));
+        }
+        for(let i=0; i<3; i++){
+            if(Math.random()<0.035){
+                fireworks.push(new Firework(
+                    Math.random()*W,
+                    H,
+                    Math.random()*H*0.5 + H*0.25
+                ));
+            }
+        }
+        fireworks.forEach((f,i)=>{
+            f.update(); f.draw();
+            if(f.mark)fireworks.splice(i,1);
+        });
+        particles.forEach((p,i)=>{
+            p.update(); p.draw();
+            if(p.life<=0)particles.splice(i,1);
+        });
+        requestAnimationFrame(loop);
+    }
+    loop();
+    window.addEventListener('resize',()=>{
+        canvas.width=W=window.innerWidth;
+        canvas.height=H=window.innerHeight;
+    });
+})();
+</script>
+</body>
+</html>
